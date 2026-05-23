@@ -58,6 +58,32 @@ int main() {
         if (strncmp(path, "/api/auth", 8) == 0) {
             printf("Path is AUTH\n");
         }
+        if (strncmp(path, "/api/testimage", 14) == 0) {
+            FILE *img_file = fopen("images/test.png", "rb");
+            if (img_file == NULL) {
+                printf("Image file not avaiable\n");
+            }
+            fseek(img_file, 0, SEEK_END);
+            size_t img_size = ftell(img_file);
+            fseek(img_file, 0, SEEK_SET);
+            printf("NEED TO SEND IMAGE\n");
+            char image_header[256];
+            snprintf(image_header, sizeof(image_header),
+
+                     "HTTP/1.1 200 OK\r\n"
+                     "Content-Type: image/png\r\n"
+                     "Content-Length: %ld\r\n"
+                     "\r\n",
+                     img_size);
+            send(client_fd, image_header, strlen(image_header), 0);
+            char buffer[1024];
+            size_t bytes_read;
+            while ((bytes_read = fread(buffer, 1, sizeof(buffer), img_file)) > 0) {
+                // CRUCIAL: Pass 'bytes_read' to send(), NOT strlen(buffer)
+                send(client_fd, buffer, bytes_read, 0);
+            }
+            fclose(img_file);
+        }
         if (strncmp(buffer, "OPTIONS", 7) == 0) {
             char *options_response = "HTTP/1.1 204 No Content\r\n"
                                      "Access-Control-Allow-Origin: *\r\n"

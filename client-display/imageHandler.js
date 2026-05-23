@@ -86,6 +86,11 @@ function ImageDisplayLoop() {
   }
 
   fetchImageURLs();
+
+  const url = "http://localhost:8080/api/testimage";
+  image.src = url;
+  image.style.display = "block";
+  header.style.display = "none";
 }
 async function authenticateWithServer() {
   const url = "http://localhost:8080/api/auth";
