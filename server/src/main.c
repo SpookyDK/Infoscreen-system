@@ -1,5 +1,8 @@
+#include "../inc/cJSON.h"
 #include <netinet/in.h>
+#include <router.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -47,69 +50,16 @@ int main() {
             close(server_fd);
             continue;
         }
+        http_info info = {};
         char buffer[2048] = {0};
         read(client_fd, buffer, sizeof(buffer) - 1);
         printf("Recieved this\n");
         printf("%s\n", buffer);
-        printf("\n--- --- --- --- ---\n");
-        char path[256] = {0};
-        char method[16] = {0};
-        sscanf(buffer, "%15s %255s", method, path);
-        if (strncmp(path, "/api/auth", 8) == 0) {
-            printf("Path is AUTH\n");
-        }
-        if (strncmp(path, "/api/testimage", 14) == 0) {
-            FILE *img_file = fopen("images/test.png", "rb");
-            if (img_file == NULL) {
-                printf("Image file not avaiable\n");
-            }
-            fseek(img_file, 0, SEEK_END);
-            size_t img_size = ftell(img_file);
-            fseek(img_file, 0, SEEK_SET);
-            printf("NEED TO SEND IMAGE\n");
-            char image_header[256];
-            snprintf(image_header, sizeof(image_header),
-
-                     "HTTP/1.1 200 OK\r\n"
-                     "Content-Type: image/png\r\n"
-                     "Content-Length: %ld\r\n"
-                     "\r\n",
-                     img_size);
-            send(client_fd, image_header, strlen(image_header), 0);
-            char buffer[1024];
-            size_t bytes_read;
-            while ((bytes_read = fread(buffer, 1, sizeof(buffer), img_file)) > 0) {
-                // CRUCIAL: Pass 'bytes_read' to send(), NOT strlen(buffer)
-                send(client_fd, buffer, bytes_read, 0);
-            }
-            fclose(img_file);
-        }
-        if (strncmp(buffer, "OPTIONS", 7) == 0) {
-            char *options_response = "HTTP/1.1 204 No Content\r\n"
-                                     "Access-Control-Allow-Origin: *\r\n"
-                                     "Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE\r\n"
-                                     // Tell the browser these headers are allowed!
-                                     "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
-                                     "Access-Control-Max-Age: 86400\r\n" // Cache this preflight for 24 hours
-                                     "Connection: close\r\n"
-                                     "\r\n";
-            send(client_fd, options_response, strlen(options_response), 0);
-            printf("Options message sent to client. \n");
-        } else {
-            char *http_response = "HTTP/1.1 200 OK\r\n"
-                                  "Access-Control-Allow-Origin: *\r\n"
-                                  "Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE\r\n"
-                                  // Tell the browser these headers are allowed!
-                                  "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
-                                  "Access-Control-Max-Age: 86400\r\n" // Cache this preflight for 24 hours
-                                  "Content-Type: text/plain\r\n"
-                                  "Content-Length: 5\r\n"
-                                  "Connection: close\r\n"
-                                  "\r\n"
-                                  "hello";
-
-            send(client_fd, http_response, strlen(http_response), 0);
-            printf("Handled actual request data.\n");
+        // Gets the path and method from the buffer via sscanf
+        sscanf(buffer, "%15s %255s %15s", info.method, info.path, info.http_rev);
+        if (strncmp(info.http_rev, "http", 4)) {
+            printf("Recieved a HTTP request\n");
+            handle_http(&info);
         }
         shutdown(client_fd, SHUT_WR);
         close(client_fd);
