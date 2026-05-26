@@ -14,6 +14,7 @@ char *http_response = "HTTP/1.1 200 OK\r\n"
                       "Connection: close\r\n"
                       "\r\n"
                       "hello";
+
 int main() {
     struct sockaddr_in socket_address = {};
     int addrlen = sizeof(socket_address);

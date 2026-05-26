@@ -108,6 +108,34 @@ int handle_http(http_info *info) {
         close(info->client_fd);
         return 0;
     }
+    // Case for getting the images associated with the user.
+    if (strncmp(info->path, "/api/images", 14) == 0) {
+        FILE *img_file = fopen("images/test.png", "rb");
+        if (img_file == NULL) {
+            printf("Image file not avaiable\n");
+        }
+        fseek(img_file, 0, SEEK_END);
+        size_t img_size = ftell(img_file);
+        fseek(img_file, 0, SEEK_SET);
+        printf("NEED TO SEND IMAGE\n");
+        char response_header[256];
+        snprintf(response_header, sizeof(response_header),
+
+                 "HTTP/1.1 200 OK\r\n"
+                 "Content-Type: image/png\r\n"
+                 "Content-Length: %ld\r\n"
+                 "\r\n",
+                 img_size);
+        send(info->client_fd, response_header, strlen(response_header), 0);
+        char buffer[1024];
+        size_t bytes_read;
+        while ((bytes_read = fread(buffer, 1, sizeof(buffer), img_file)) > 0) {
+            send(info->client_fd, buffer, bytes_read, 0);
+        }
+        fclose(img_file);
+        close(info->client_fd);
+        return 0;
+    }
     // Should be last case
     if (strncmp(info->path, "/", 1) == 0) {
         printf("HTML page requested\n");

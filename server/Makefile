@@ -3,7 +3,7 @@ TARGET = InfoscreenServer
 
 # Compilers and Flags
 CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -I$(INC_DIR)
+CFLAGS  = -Wall -Wextra -std=c11 -pg -I$(INC_DIR)
 
 # Directories
 SRC_DIR = src
